@@ -4025,7 +4025,12 @@ int get_shared_radio_freqs(struct wpa_supplicant *wpa_s,
 			continue;
 
 		rn2 = ifs->driver->get_radio_name(ifs->drv_priv);
+#ifdef CONFIG_MEDIATEK
+//wlan0 interface has an different radio name with p2p0 interface
+		if (!rn2 || os_strcmp(rn, rn2) == 0)
+#else
 		if (!rn2 || os_strcmp(rn, rn2) != 0)
+#endif
 			continue;
 
 		if (ifs->current_ssid == NULL || ifs->assoc_freq == 0)
