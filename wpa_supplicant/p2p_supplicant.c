@@ -4027,6 +4027,10 @@ static int wpas_p2p_setup_freqs(struct wpa_supplicant *wpa_s, int freq,
 		if (*pref_freq == 0 && num < wpa_s->num_multichan_concurrent) {
 			wpa_printf(MSG_DEBUG, "P2P: Try to prefer a frequency we are already using");
 			*pref_freq = freqs[i];
+			//gwl
+			*force_freq = freqs[i];
+			wpa_printf(MSG_ERROR, "P2P: Try to force a frequency we are already using (%u MHz)", *force_freq);
+			//------
 #ifdef ANDROID_P2P
 		} else {
 			wpa_printf(MSG_DEBUG, "P2P: Try to force us to use frequency (%u MHz) which is already in use",

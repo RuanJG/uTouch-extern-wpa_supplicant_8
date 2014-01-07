@@ -18,6 +18,9 @@
 static int p2p_go_det(u8 own_intent, u8 peer_value)
 {
 	u8 peer_intent = peer_value >> 1;
+
+	wpa_printf(MSG_ERROR, "own_intent = %d, peer_value = %d", own_intent, peer_intent);
+
 	if (own_intent == peer_intent) {
 		if (own_intent == P2P_MAX_GO_INTENT)
 			return -1; /* both devices want to become GO */

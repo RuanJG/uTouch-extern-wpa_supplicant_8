@@ -31,6 +31,7 @@ endif
 
 ifeq ($(BOARD_WLAN_DEVICE), mediatek)
 L_CFLAGS += -DANDROID_P2P
+L_CFLAGS += -DCONFIG_MEDIATEK
 endif
 
 ifeq ($(BOARD_WLAN_DEVICE), bcmdhd)
