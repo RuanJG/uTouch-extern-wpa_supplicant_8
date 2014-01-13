@@ -256,7 +256,7 @@ static void wpa_supplicant_ctrl_iface_msg_cb(void *ctx, int level, int global,
 {
 	struct wpa_supplicant *wpa_s = ctx;
 
-	if (wpa_s == NULL)
+	if (wpa_s == NULL || wpa_s->global == NULL)
 		return;
 
 	if (global != 2 && wpa_s->global->ctrl_iface) {
