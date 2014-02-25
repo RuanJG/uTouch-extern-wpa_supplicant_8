@@ -4114,9 +4114,17 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		wpa_s->p2p_long_listen = 0;
 
 	wpa_s->p2p_wps_method = wps_method;
+#if (BOARD_WIFI_VENDOR == nmi)
+	wpa_s->p2p_persistent_group = 0;
+	persistent_group=0;
+	wpa_s->p2p_persistent_id = persistent_id;
+	go_intent=15;
+	wpa_s->p2p_go_intent=15;
+#else
 	wpa_s->p2p_persistent_group = !!persistent_group;
 	wpa_s->p2p_persistent_id = persistent_id;
 	wpa_s->p2p_go_intent = go_intent;
+#endif
 	wpa_s->p2p_connect_freq = freq;
 	wpa_s->p2p_fallback_to_go_neg = 0;
 	wpa_s->p2p_pd_before_go_neg = !!pd;

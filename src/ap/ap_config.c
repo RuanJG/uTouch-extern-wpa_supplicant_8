@@ -51,7 +51,13 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->broadcast_key_idx_max = 2;
 	bss->eap_reauth_period = 3600;
 
+#if (BOARD_WIFI_VENDOR == nmi) //nmi to support p2p
+	wpa_printf(MSG_DEBUG, "NMI: Change Group rekey\n");
+	bss->wpa_ptk_rekey = 0;
+	bss->wpa_group_rekey = 0;
+#else
 	bss->wpa_group_rekey = 600;
+#endif
 	bss->wpa_gmk_rekey = 86400;
 	bss->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 	bss->wpa_pairwise = WPA_CIPHER_TKIP;
