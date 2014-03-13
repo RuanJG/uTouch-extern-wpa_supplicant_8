@@ -31,7 +31,9 @@ extern int gl_rssi_filter_level;
 static void usage(void)
 {
 	int i;
+    #ifdef WIFI_EAGLE
 	printf("ESP_VERSION : %s\n", ESP_VERSION); /* add by esp */
+    #endif
 	printf("%s\n\n%s\n"
 	       "usage:\n"
 	       "  wpa_supplicant [-BddhKLqqstuvW] [-P<pid file>] "
