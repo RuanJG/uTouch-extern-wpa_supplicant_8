@@ -51,6 +51,10 @@ endif
 ifeq ($(BOARD_WLAN_DEVICE), mrvl)
 L_CFLAGS += -DANDROID_P2P
 endif
+ifeq ($(BOARD_WIFI_VENDOR), Espressif)
+L_CFLAGS += -DANDROID_P2P
+L_CFLAGS += -DWIFI_EAGLE
+endif
 
 # Use Android specific directory for control interface sockets
 L_CFLAGS += -DCONFIG_CTRL_IFACE_CLIENT_DIR=\"/data/misc/wifi/sockets\"
