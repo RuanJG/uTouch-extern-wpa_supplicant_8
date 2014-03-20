@@ -33,6 +33,11 @@
 #include "gas_serv.h"
 #include "sta_info.h"
 
+#if (BOARD_WIFI_VENDOR == nmi)
+//[[NMI_WIFI
+static FILE *nmi_softap = NULL;
+//]]
+#endif
 static void ap_sta_remove_in_other_bss(struct hostapd_data *hapd,
 				       struct sta_info *sta);
 static void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx);
@@ -913,6 +918,15 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
 
 	if (authorized) {
+#if (BOARD_WIFI_VENDOR == nmi)
+//[[NMI_WIFI
+		nmi_softap = fopen("/data/misc/wifi/hostapd/connected", "w+");
+		if(nmi_softap == NULL)
+			wpa_msg(hapd->msg_ctx, MSG_INFO, "failed to open file.");
+		else
+			fclose(nmi_softap);	
+//]]
+#endif
 		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s", buf);
 
 		if (hapd->msg_ctx_parent &&
@@ -922,6 +936,12 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 
 		sta->flags |= WLAN_STA_AUTHORIZED;
 	} else {
+#if (BOARD_WIFI_VENDOR == nmi)
+//[[NMI_WIFI
+		remove("/data/misc/wifi/hostapd/connected");
+//]]
+#endif
+
 		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
 
 		if (hapd->msg_ctx_parent &&

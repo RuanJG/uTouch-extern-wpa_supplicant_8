@@ -6113,6 +6113,29 @@ static int wpas_global_ctrl_iface_set(struct wpa_global *global, char *cmd)
 	}
 #endif /* CONFIG_WIFI_DISPLAY */
 
+#if (BOARD_WIFI_VENDOR == nmi)
+	if ((os_strcasecmp(cmd, "device_name") == 0) || (os_strcasecmp(cmd, "p2p_ssid_postfix") == 0)) {
+		int ret = 0;
+		struct wpa_supplicant *wpa_s;
+		const char *ifname = "p2p0";
+		
+		for (wpa_s = global->ifaces; wpa_s; wpa_s = wpa_s->next) {
+			if (os_strcmp(ifname, wpa_s->ifname) == 0)
+				break;
+		}
+
+		if (wpa_s == NULL) {
+			wpa_printf(MSG_DEBUG, "[MMM] FAIL-NO-IFNAME-MATCH");
+			return -1;
+		}
+		value[-1] = '=';
+		ret = wpa_config_process_global(wpa_s->conf, cmd, -1);
+		if(ret == 0)
+			wpa_supplicant_update_config(wpa_s);
+		return 0;
+	}
+#endif
+
 	return -1;
 }
 
