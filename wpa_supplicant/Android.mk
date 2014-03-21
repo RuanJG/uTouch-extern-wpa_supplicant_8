@@ -277,6 +277,11 @@ CONFIG_AP=y
 ifdef CONFIG_P2P_STRICT
 L_CFLAGS += -DCONFIG_P2P_STRICT
 endif
+#nmi 
+ifeq ($(BOARD_WIFI_VENDOR), nmi)
+L_CFLAGS += -DNMI_WIFI
+endif
+#nmi
 endif
 
 ifdef CONFIG_WIFI_DISPLAY

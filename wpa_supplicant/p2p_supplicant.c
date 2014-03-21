@@ -4114,7 +4114,7 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		wpa_s->p2p_long_listen = 0;
 
 	wpa_s->p2p_wps_method = wps_method;
-#if (BOARD_WIFI_VENDOR == nmi)
+#ifdef NMI_WIFI //nmi to support p2p
 	wpa_s->p2p_persistent_group = 0;
 	persistent_group=0;
 	wpa_s->p2p_persistent_id = persistent_id;

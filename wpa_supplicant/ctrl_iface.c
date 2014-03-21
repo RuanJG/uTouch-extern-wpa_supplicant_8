@@ -6113,7 +6113,7 @@ static int wpas_global_ctrl_iface_set(struct wpa_global *global, char *cmd)
 	}
 #endif /* CONFIG_WIFI_DISPLAY */
 
-#if (BOARD_WIFI_VENDOR == nmi)
+#ifdef NMI_WIFI
 	if ((os_strcasecmp(cmd, "device_name") == 0) || (os_strcasecmp(cmd, "p2p_ssid_postfix") == 0)) {
 		int ret = 0;
 		struct wpa_supplicant *wpa_s;

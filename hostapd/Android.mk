@@ -47,6 +47,7 @@ endif
 
 ifeq ($(BOARD_WIFI_VENDOR), nmi)
 L_CFLAGS += -DANDROID_P2P
+L_CFLAGS += -DNMI_WIFI
 endif
 
 # Use Android specific directory for control interface sockets

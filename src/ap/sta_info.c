@@ -33,7 +33,7 @@
 #include "gas_serv.h"
 #include "sta_info.h"
 
-#if (BOARD_WIFI_VENDOR == nmi)
+#ifdef NMI_WIFI
 //[[NMI_WIFI
 static FILE *nmi_softap = NULL;
 //]]
@@ -918,7 +918,7 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
 
 	if (authorized) {
-#if (BOARD_WIFI_VENDOR == nmi)
+#ifdef NMI_WIFI 
 //[[NMI_WIFI
 		nmi_softap = fopen("/data/misc/wifi/hostapd/connected", "w+");
 		if(nmi_softap == NULL)
@@ -936,7 +936,7 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 
 		sta->flags |= WLAN_STA_AUTHORIZED;
 	} else {
-#if (BOARD_WIFI_VENDOR == nmi)
+#ifdef NMI_WIFI 
 //[[NMI_WIFI
 		remove("/data/misc/wifi/hostapd/connected");
 //]]
