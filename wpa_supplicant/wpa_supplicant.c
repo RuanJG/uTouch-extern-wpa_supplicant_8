@@ -109,6 +109,10 @@ extern int wpa_debug_show_keys;
 extern int wpa_debug_timestamp;
 extern struct wpa_driver_ops *wpa_drivers[];
 
+#ifdef WIFI_EAGLE
+extern void cache_res_free(void);
+#endif
+
 /* Configure default/group WEP keys for static WEP */
 int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
@@ -730,6 +734,10 @@ void wpa_supplicant_terminate_proc(struct wpa_global *global)
 	if (pending)
 		return;
 	eloop_terminate();
+
+#ifdef WIFI_EAGLE
+        cache_res_free();
+#endif
 }
 
 
@@ -1888,6 +1896,10 @@ void wpa_supplicant_disable_network(struct wpa_supplicant *wpa_s,
 	}
 }
 
+#ifdef WIFI_EAGLE
+extern u8 gl_var_ssid[64];
+extern size_t gl_var_ssid_len;
+#endif
 
 /**
  * wpa_supplicant_select_network - Attempt association with a network
@@ -1942,6 +1954,11 @@ void wpa_supplicant_select_network(struct wpa_supplicant *wpa_s,
 	wpa_s->connect_without_scan = NULL;
 	wpa_s->disconnected = 0;
 	wpa_s->reassociate = 1;
+#ifdef WIFI_EAGLE
+        //ap_cache
+        os_memcpy(gl_var_ssid, ssid->ssid, ssid->ssid_len);
+        gl_var_ssid_len = ssid->ssid_len;
+#endif
 
 	if (wpa_supplicant_fast_associate(wpa_s) != 1)
 		wpa_supplicant_req_scan(wpa_s, 0, disconnected ? 100000 : 0);
@@ -3128,6 +3145,9 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s,
 		wpa_s->conf = NULL;
 	}
 
+#ifdef WIFI_EAGLE
+        cache_res_free();
+#endif
 	os_free(wpa_s);
 }
 
@@ -3509,6 +3529,9 @@ void wpa_supplicant_deinit(struct wpa_global *global)
 	wpa_debug_close_syslog();
 	wpa_debug_close_file();
 	wpa_debug_close_linux_tracing();
+#ifdef WIFI_EAGLE
+        cache_res_free();
+#endif
 }
 
 
