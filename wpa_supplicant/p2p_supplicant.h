@@ -36,6 +36,14 @@ int wpas_p2p_handle_frequency_conflicts(struct wpa_supplicant *wpa_s,
 int wpas_p2p_group_remove(struct wpa_supplicant *wpa_s, const char *ifname);
 int wpas_p2p_group_add(struct wpa_supplicant *wpa_s, int persistent_group,
 		       int freq, int ht40);
+ 
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+int wpas_p2p_group_add_as_softap(struct wpa_supplicant *wpa_s, int persistent_group,
+						int freq, int ht40, u8 *go_ssid,
+						int ssid_len, u8 *go_passphrase, int psk_len, u8 *go_key_mgmt, int key_mgmt_len, u8 *go_pairwise, int pairwise_len, u8 *go_proto, int proto_len);
+#endif
+ 
+
 int wpas_p2p_group_add_persistent(struct wpa_supplicant *wpa_s,
 				  struct wpa_ssid *ssid, int addr_allocated,
 				  int freq, int ht40,
