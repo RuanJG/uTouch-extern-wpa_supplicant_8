@@ -55,6 +55,12 @@ ifeq ($(BOARD_WIFI_VENDOR), Espressif)
 L_CFLAGS += -DANDROID_P2P
 L_CFLAGS += -DWIFI_EAGLE
 endif
+##[[ NMI WIFI
+ifeq ($(BOARD_WLAN_DEVICE), nmc100x)
+#L_CFLAGS += -DANDROID_P2P
+L_CFLAGS += -DANDROID_NMC_OPTIMIZED
+endif
+##]]
 
 # Use Android specific directory for control interface sockets
 L_CFLAGS += -DCONFIG_CTRL_IFACE_CLIENT_DIR=\"/data/misc/wifi/sockets\"
@@ -281,11 +287,6 @@ CONFIG_AP=y
 ifdef CONFIG_P2P_STRICT
 L_CFLAGS += -DCONFIG_P2P_STRICT
 endif
-#nmi 
-ifeq ($(BOARD_WIFI_VENDOR), nmi)
-L_CFLAGS += -DNMI_WIFI
-endif
-#nmi
 endif
 
 ifdef CONFIG_WIFI_DISPLAY

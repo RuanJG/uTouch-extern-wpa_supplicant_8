@@ -5996,6 +5996,11 @@ static char * wpas_global_ctrl_iface_redir_p2p(struct wpa_global *global,
 #ifdef ANDROID_P2P
 		"LIST_NETWORKS",
 		"SAVE_CONFIG",
+#else
+#if (defined ANDROID_NMC_OPTIMIZED)
+		"LIST_NETWORKS",
+		"SAVE_CONFIG",
+#endif
 #endif
 		"P2P_FIND",
 		"P2P_STOP_FIND",
@@ -6016,6 +6021,13 @@ static char * wpas_global_ctrl_iface_redir_p2p(struct wpa_global *global,
 		"GET_NETWORK ",
 		"REMOVE_NETWORK ",
 		"SET ",
+#else
+#if (defined ANDROID_NMC_OPTIMIZED)
+		"DRIVER ",
+		"GET_NETWORK ",
+		"REMOVE_NETWORK ",
+		"SET ",
+#endif
 #endif
 		"P2P_FIND ",
 		"P2P_CONNECT ",
@@ -6112,29 +6124,6 @@ static int wpas_global_ctrl_iface_set(struct wpa_global *global, char *cmd)
 		return 0;
 	}
 #endif /* CONFIG_WIFI_DISPLAY */
-
-#ifdef NMI_WIFI
-	if ((os_strcasecmp(cmd, "device_name") == 0) || (os_strcasecmp(cmd, "p2p_ssid_postfix") == 0)) {
-		int ret = 0;
-		struct wpa_supplicant *wpa_s;
-		const char *ifname = "p2p0";
-		
-		for (wpa_s = global->ifaces; wpa_s; wpa_s = wpa_s->next) {
-			if (os_strcmp(ifname, wpa_s->ifname) == 0)
-				break;
-		}
-
-		if (wpa_s == NULL) {
-			wpa_printf(MSG_DEBUG, "[MMM] FAIL-NO-IFNAME-MATCH");
-			return -1;
-		}
-		value[-1] = '=';
-		ret = wpa_config_process_global(wpa_s->conf, cmd, -1);
-		if(ret == 0)
-			wpa_supplicant_update_config(wpa_s);
-		return 0;
-	}
-#endif
 
 	return -1;
 }

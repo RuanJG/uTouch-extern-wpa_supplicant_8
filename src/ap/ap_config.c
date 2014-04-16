@@ -51,7 +51,7 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->broadcast_key_idx_max = 2;
 	bss->eap_reauth_period = 3600;
 
-#ifdef NMI_WIFI //nmi to support p2p
+#if (defined ANDROID_NMC_OPTIMIZED) //nmi to support p2p
 	wpa_printf(MSG_DEBUG, "NMI: Change Group rekey\n");
 	bss->wpa_ptk_rekey = 0;
 	bss->wpa_group_rekey = 0;

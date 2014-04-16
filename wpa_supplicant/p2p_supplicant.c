@@ -2810,10 +2810,15 @@ static void wpas_remove_persistent_client(struct wpa_supplicant *wpa_s,
 	wpas_remove_persistent_peer(wpa_s, ssid, peer, 1);
 }
 
-
+#if (defined ANDROID_NMC_OPTIMIZED)
+static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
+				   const struct p2p_channels *channels,
+				   const u8 *peer, int operfreq)
+#else
 static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
 				   const struct p2p_channels *channels,
 				   const u8 *peer)
+#endif
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	struct wpa_ssid *ssid;
@@ -2860,6 +2865,14 @@ static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
 		return;
 	}
 
+#if (defined ANDROID_NMC_OPTIMIZED)
+	/*Checking if the passed operating channel is not null*/
+	if(operfreq)
+		wpa_s->p2p_persistent_go_freq = operfreq;
+
+	wpa_dbg(wpa_s, MSG_DEBUG,"NMI Persistent Channel %d",wpa_s->p2p_persistent_go_freq);
+#endif
+ 
 	/*
 	 * The peer could have missed our ctrl::ack frame for Invitation
 	 * Response and continue retransmitting the frame. To reduce the
@@ -4117,17 +4130,10 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		wpa_s->p2p_long_listen = 0;
 
 	wpa_s->p2p_wps_method = wps_method;
-#ifdef NMI_WIFI //nmi to support p2p
-	wpa_s->p2p_persistent_group = 0;
-	persistent_group=0;
-	wpa_s->p2p_persistent_id = persistent_id;
-	go_intent=15;
-	wpa_s->p2p_go_intent=15;
-#else
+
 	wpa_s->p2p_persistent_group = !!persistent_group;
 	wpa_s->p2p_persistent_id = persistent_id;
 	wpa_s->p2p_go_intent = go_intent;
-#endif
 	wpa_s->p2p_connect_freq = freq;
 	wpa_s->p2p_fallback_to_go_neg = 0;
 	wpa_s->p2p_pd_before_go_neg = !!pd;

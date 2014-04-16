@@ -749,9 +749,16 @@ struct p2p_config {
 	 * (P2P_SC_SUCCESS) indicating success or -1 to indicate a timeout or a
 	 * local failure in transmitting the Invitation Request.
 	 */
+#if (defined ANDROID_NMC_OPTIMIZED)
+	 /*NMI Patch: Adding extra parameter to pass the operating frequency*/
+	void (*invitation_result)(void *ctx, int status, const u8 *bssid,
+				  const struct p2p_channels *channels,
+				  const u8 *addr, int operfreq);
+#else
 	void (*invitation_result)(void *ctx, int status, const u8 *bssid,
 				  const struct p2p_channels *channels,
 				  const u8 *addr);
+#endif
 
 	/**
 	 * go_connected - Check whether we are connected to a GO
