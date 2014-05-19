@@ -749,9 +749,16 @@ struct p2p_config {
 	 * (P2P_SC_SUCCESS) indicating success or -1 to indicate a timeout or a
 	 * local failure in transmitting the Invitation Request.
 	 */
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+	 /*NMI Patch: Adding extra parameter to pass the operating frequency*/
+	void (*invitation_result)(void *ctx, int status, const u8 *bssid,
+				  const struct p2p_channels *channels,
+				  const u8 *addr, int operfreq);
+#else
 	void (*invitation_result)(void *ctx, int status, const u8 *bssid,
 				  const struct p2p_channels *channels,
 				  const u8 *addr);
+#endif
 
 	/**
 	 * go_connected - Check whether we are connected to a GO

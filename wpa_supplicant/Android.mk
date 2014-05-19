@@ -283,8 +283,15 @@ L_CFLAGS += -DCONFIG_P2P_STRICT
 endif
 #nmi 
 ifeq ($(BOARD_WIFI_VENDOR), nmi)
+ifeq ($(TARGET_BOARD_PLATFORM),rk3188)
+L_CFLAGS += -DNMI_WIFI_RK31
+else
+ifeq ($(TARGET_BOARD_PLATFORM),rk3168)
+L_CFLAGS += -DNMI_WIFI_RK31
+endif #rk3168
+endif #rk3188
 L_CFLAGS += -DNMI_WIFI
-endif
+endif #nmi
 #nmi
 endif
 

@@ -3358,10 +3358,18 @@ static void p2p_timeout_invite_listen(struct p2p_data *p2p)
 	} else {
 		if (p2p->invite_peer) {
 			p2p_dbg(p2p, "Invitation Request retry limit reached");
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+            /*NMI Patch: Adding extra parameter for operating freq*/
+			if (p2p->cfg->invitation_result)
+				p2p->cfg->invitation_result(
+					p2p->cfg->cb_ctx, -1, NULL, NULL,
+					p2p->invite_peer->info.p2p_device_addr, 0);
+#else
 			if (p2p->cfg->invitation_result)
 				p2p->cfg->invitation_result(
 					p2p->cfg->cb_ctx, -1, NULL, NULL,
 					p2p->invite_peer->info.p2p_device_addr);
+#endif
 		}
 		p2p_set_state(p2p, P2P_IDLE);
 	}

@@ -2810,10 +2810,15 @@ static void wpas_remove_persistent_client(struct wpa_supplicant *wpa_s,
 	wpas_remove_persistent_peer(wpa_s, ssid, peer, 1);
 }
 
-
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
+				   const struct p2p_channels *channels,
+				   const u8 *peer, int operfreq)
+#else
 static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
 				   const struct p2p_channels *channels,
 				   const u8 *peer)
+#endif
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	struct wpa_ssid *ssid;
@@ -2860,6 +2865,14 @@ static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
 		return;
 	}
 
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+	/*Checking if the passed operating channel is not null*/
+	if(operfreq)
+		wpa_s->p2p_persistent_go_freq = operfreq;
+
+	wpa_dbg(wpa_s, MSG_DEBUG,"NMI Persistent Channel %d",wpa_s->p2p_persistent_go_freq);
+#endif
+ 
 	/*
 	 * The peer could have missed our ctrl::ack frame for Invitation
 	 * Response and continue retransmitting the frame. To reduce the
@@ -3468,7 +3481,7 @@ void wpas_p2p_deinit_global(struct wpa_global *global)
 static int wpas_p2p_create_iface(struct wpa_supplicant *wpa_s)
 {
 #ifdef WIFI_EAGLE
-	return 0;
+    return 0;
 #endif
 	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE) &&
 	    wpa_s->conf->p2p_no_group_iface)
@@ -4117,14 +4130,18 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		wpa_s->p2p_long_listen = 0;
 
 	wpa_s->p2p_wps_method = wps_method;
-#ifdef NMI_WIFI //nmi to support p2p
-	wpa_s->p2p_persistent_group = 0;
-	persistent_group=0;
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+    wpa_s->p2p_persistent_group = !!persistent_group;
 	wpa_s->p2p_persistent_id = persistent_id;
-	go_intent=15;
-	wpa_s->p2p_go_intent=15;
+	wpa_s->p2p_go_intent = go_intent;
+#elif defined (NMI_WIFI) //nmi to support p2p
+    wpa_s->p2p_persistent_group = 0;
+    persistent_group=0;
+    wpa_s->p2p_persistent_id = persistent_id;
+    go_intent=15;
+    wpa_s->p2p_go_intent=15;
 #else
-	wpa_s->p2p_persistent_group = !!persistent_group;
+    wpa_s->p2p_persistent_group = !!persistent_group;
 	wpa_s->p2p_persistent_id = persistent_id;
 	wpa_s->p2p_go_intent = go_intent;
 #endif

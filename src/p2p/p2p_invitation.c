@@ -380,7 +380,11 @@ void p2p_process_invitation_resp(struct p2p_data *p2p, const u8 *sa,
 	struct p2p_device *dev;
 	struct p2p_message msg;
 	struct p2p_channels intersection, *channels = NULL;
-
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+	/*NMI_md Patch: Invitation*/
+	int operfreq;
+#endif
+	
 	p2p_dbg(p2p, "Received Invitation Response from " MACSTR,
 		MAC2STR(sa));
 
@@ -428,9 +432,32 @@ void p2p_process_invitation_resp(struct p2p_data *p2p, const u8 *sa,
 		channels = &intersection;
 	}
 
+#if (defined NMI_WIFI_RK31) //2014-05-17 modify by wengbj for wifidisplay (not apply for 3026)
+	if(msg.operating_channel)
+	{
+		operfreq = p2p_channel_to_freq(
+					msg.operating_channel[3],
+					msg.operating_channel[4]);
+	}
+	else if(msg.channel_list)
+	{
+	    operfreq = p2p_channel_to_freq(
+					msg.channel_list[3],
+					msg.channel_list[5]);
+	}
+	else
+	     operfreq = 0;	
+
+	p2p_dbg(p2p, "P2P: NMI OPERFREQ %d",operfreq);
+
+	if (p2p->cfg->invitation_result)
+		p2p->cfg->invitation_result(p2p->cfg->cb_ctx, *msg.status,
+					    msg.group_bssid, channels, sa, operfreq);
+#else
 	if (p2p->cfg->invitation_result)
 		p2p->cfg->invitation_result(p2p->cfg->cb_ctx, *msg.status,
 					    msg.group_bssid, channels, sa);
+#endif
 
 	p2p_parse_free(&msg);
 

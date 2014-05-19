@@ -48,12 +48,17 @@ endif
 ifeq ($(BOARD_WIFI_VENDOR), nmi)
 ifeq ($(NMC1000_WIFI_SUPPORT_P2P),true)
 ifeq ($(TARGET_BOARD_PLATFORM),rk3188)
+L_CFLAGS += -DNMI_WIFI_RK31
+else
+ifeq ($(TARGET_BOARD_PLATFORM),rk3168)
+L_CFLAGS += -DNMI_WIFI_RK31
 else
 L_CFLAGS += -DANDROID_P2P
-endif
-endif
+endif #rk3168
+endif #rk3188
+endif #p2p
 L_CFLAGS += -DNMI_WIFI
-endif
+endif #nmi
 
 ifeq ($(BOARD_WIFI_VENDOR), Espressif)
 L_CFLAGS += -DANDROID_P2P
