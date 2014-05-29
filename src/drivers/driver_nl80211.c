@@ -357,8 +357,18 @@ static inline int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx)
 }
 #endif /* HOSTAPD */
 #ifdef ANDROID
+
+
+
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+int wpa_driver_nl80211_driver_cmd(void *priv, char *cmd, char *buf,
+					 size_t buf_len);
+#else
 extern int wpa_driver_nl80211_driver_cmd(void *priv, char *cmd, char *buf,
 					 size_t buf_len);
+#endif //CONFIG_P2P_AUTO_GO_AS_SOFTAP  
+
+
 #endif
 
 static int wpa_driver_nl80211_set_freq(struct i802_bss *bss,
@@ -3157,6 +3167,12 @@ static int wiphy_info_handler(struct nl_msg *msg, void *arg)
 	struct wpa_driver_capa *capa = info->capa;
 	struct wpa_driver_nl80211_data *drv = info->drv;
 
+
+
+	#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+	wpa_printf(MSG_DEBUG, "[Arron] wiphy_info_handler.");
+	#endif
+
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
 
@@ -3211,10 +3227,17 @@ static int wiphy_info_handler(struct nl_msg *msg, void *arg)
 	wiphy_info_tdls(capa, tb[NL80211_ATTR_TDLS_SUPPORT],
 			tb[NL80211_ATTR_TDLS_EXTERNAL_SETUP]);
 
-#ifndef REALTEK_WIFI_VENDOR
+
+#ifndef REALTEK_WIFI_VENDOR //(REALTEK_WIFI_VENDOR || CONFIG_P2P_AUTO_GO_AS_SOFTAP)
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP 
 	if (tb[NL80211_ATTR_DEVICE_AP_SME])
 #endif
+#endif
 		info->device_ap_sme = 1;
+
+
+
+
 
 	wiphy_info_feature_flags(info, tb[NL80211_ATTR_FEATURE_FLAGS]);
 	wiphy_info_probe_resp_offload(capa,
@@ -3282,6 +3305,12 @@ static int wpa_driver_nl80211_get_info(struct wpa_driver_nl80211_data *drv,
 			   "authentication/association or connect commands");
 		info->error = 1;
 	}
+	
+	#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+	wpa_printf(MSG_DEBUG, "[Arron] p2p_go = %d, p2p_client = %d.", 
+		info->p2p_go_supported, info->p2p_client_supported);
+	#endif
+	
 
 	if (info->p2p_go_supported && info->p2p_client_supported)
 		drv->capa.flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
@@ -3682,6 +3711,16 @@ static void * wpa_driver_nl80211_init(void *ctx, const char *ifname,
 		os_free(rcfg);
 	}
 
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+		wpa_printf(MSG_DEBUG, "bss->ifname: %s", bss->ifname);
+		if (!os_strcmp(bss->ifname, "p2p-ap0-0"))
+			drv->device_ap_sme = 1;
+#endif
+
+
+
+
+
 	if (wpa_driver_nl80211_finish_drv_init(drv))
 		goto failed;
 
@@ -3922,9 +3961,12 @@ static int nl80211_mgmt_subscribe_ap(struct i802_bss *bss)
 		}
 	}
 
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP
 	if (nl80211_register_spurious_class3(bss))
 		goto out_err;
-
+#endif
+	
+	
 	if (nl80211_get_wiphy_data_ap(bss) == NULL)
 		goto out_err;
 
@@ -4067,11 +4109,16 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
 	bss->if_dynamic = bss->if_dynamic || drv->global->if_add_wdevid_set;
 	drv->global->if_add_wdevid_set = 0;
 
+
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP
 	if (wpa_driver_nl80211_capa(drv))
 		return -1;
 
 	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
 		   bss->ifname, drv->phyname);
+#endif
+
+
 
 #ifndef HOSTAPD
 	if (bss->if_dynamic)
@@ -4113,6 +4160,21 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
 	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
 			       1, IF_OPER_DORMANT);
 #endif /* HOSTAPD */
+
+
+
+
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+	//[Arron] get capability of p2p in here
+	if (wpa_driver_nl80211_capa(drv))
+			return -1;
+	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
+			   bss->ifname, drv->phyname);
+#endif
+
+
+	
+
 
 	if (linux_get_ifhwaddr(drv->global->ioctl_sock, bss->ifname,
 			       bss->addr))
@@ -4246,6 +4308,17 @@ static void wpa_driver_nl80211_deinit(struct i802_bss *bss)
 static void wpa_driver_nl80211_scan_timeout(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_driver_nl80211_data *drv = eloop_ctx;
+	
+	
+
+	#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+	#ifdef LK_DEBUG
+	wpa_printf(MSG_DEBUG, "nl80211: %s : wpa_driver_nl80211_set_mode", __FUNCTION__);
+	#endif
+	#endif
+
+	
+	
 	if (drv->ap_scan_as_station != NL80211_IFTYPE_UNSPECIFIED) {
 		wpa_driver_nl80211_set_mode(&drv->first_bss,
 					    drv->ap_scan_as_station);
@@ -7890,6 +7963,16 @@ static int wpa_driver_nl80211_ap(struct wpa_driver_nl80211_data *drv,
 	struct hostapd_freq_params freq = {
 		.freq = params->freq,
 	};
+	
+	
+
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+#ifdef LK_DEBUG
+	wpa_printf(MSG_DEBUG, "nl80211: wpa_driver_nl80211_ap: wpa_driver_nl80211_set_mode");
+#endif
+#endif
+
+	
 
 	if (params->p2p) {
 		wpa_printf(MSG_DEBUG, "nl80211: Setup AP operations for P2P "
@@ -10709,11 +10792,16 @@ static int nl80211_set_p2p_powersave(void *priv, int legacy_ps, int opp_ps,
 		   "opp_ps=%d ctwindow=%d)", legacy_ps, opp_ps, ctwindow);
 
 	if (opp_ps != -1 || ctwindow != -1)
-#ifdef ANDROID_P2P
+
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP 
+	#ifdef ANDROID_P2P 
 		wpa_driver_set_p2p_ps(priv, legacy_ps, opp_ps, ctwindow);
+	#else
+		return -1; /* Not yet supported */
+	#endif
 #else
 		return -1; /* Not yet supported */
-#endif
+#endif //CONFIG_P2P_AUTO_GO_AS_SOFTAP
 
 	if (legacy_ps == -1)
 		return 0;
@@ -10981,9 +11069,10 @@ static int android_pno_stop(struct i802_bss *bss)
 	return android_priv_cmd(bss, "PNOFORCE 0");
 }
 
-#endif /* ANDROID */
 
 
+
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
 static int driver_nl80211_set_key(const char *ifname, void *priv,
 				  enum wpa_alg alg, const u8 *addr,
 				  int key_idx, int set_tx,
@@ -11135,6 +11224,326 @@ const u8 * wpa_driver_nl80211_get_macaddr(void *priv)
 }
 
 
+int wpa_driver_nl80211_driver_cmd(void *priv, char *cmd, char *buf,
+				  size_t buf_len )
+{
+	struct i802_bss *bss = priv;
+	struct wpa_driver_nl80211_data *drv = bss->drv;
+	struct ifreq ifr;
+	android_wifi_priv_cmd priv_cmd;
+	int ret = 0;
+
+	if (os_strcasecmp(cmd, "STOP") == 0) {
+		linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 0);
+		wpa_msg(drv->ctx, MSG_INFO, WPA_EVENT_DRIVER_STATE "STOPPED");
+	} else if (os_strcasecmp(cmd, "START") == 0) {
+		linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 1);
+		wpa_msg(drv->ctx, MSG_INFO, WPA_EVENT_DRIVER_STATE "STARTED");
+	} else if (os_strcasecmp(cmd, "MACADDR") == 0) {
+		u8 macaddr[ETH_ALEN] = {};
+
+		ret = linux_get_ifhwaddr(drv->global->ioctl_sock, bss->ifname, macaddr);
+		if (!ret)
+			ret = os_snprintf(buf, buf_len,
+					  "Macaddr = " MACSTR "\n", MAC2STR(macaddr));
+	} else if (os_strcasecmp(cmd, "RELOAD") == 0) {
+		wpa_msg(drv->ctx, MSG_INFO, WPA_EVENT_DRIVER_STATE "HANGED");
+	} else if (os_strncasecmp(cmd, "POWERMODE ", 10) == 0) {
+		int state;
+
+		state = atoi(cmd + 10);
+		//ret = wpa_driver_set_power_save(priv, state);
+		if (ret < 0)
+			wpa_driver_send_hang_msg(drv);
+		else
+			drv_errors = 0;
+	}  else if (os_strncasecmp(cmd, "GETPOWER", 8) == 0) {
+		int state = -1;
+
+		//ret = wpa_driver_get_power_save(priv, &state);
+		if (!ret && (state != -1)) {
+			ret = os_snprintf(buf, buf_len, "POWERMODE = %d\n", state);
+			drv_errors = 0;
+		} else {
+			wpa_driver_send_hang_msg(drv);
+		}
+	} else { /* Use private command */
+		if (os_strcasecmp(cmd, "BGSCAN-START") == 0) {
+			//ret = wpa_driver_set_backgroundscan_params(priv);
+			//if (ret < 0) {
+			//	return ret;
+			//}
+			os_memcpy(buf, "PNOFORCE 1", 11);
+		} else if (os_strcasecmp(cmd, "BGSCAN-STOP") == 0) {
+			os_memcpy(buf, "PNOFORCE 0", 11);
+		} else {
+			os_memcpy(buf, cmd, strlen(cmd) + 1);
+		}
+		memset(&ifr, 0, sizeof(ifr));
+		memset(&priv_cmd, 0, sizeof(priv_cmd));
+		os_strncpy(ifr.ifr_name, bss->ifname, IFNAMSIZ);
+
+		priv_cmd.buf = buf;
+		priv_cmd.used_len = buf_len;
+		priv_cmd.total_len = buf_len;
+		ifr.ifr_data = &priv_cmd;
+
+		if ((ret = ioctl(drv->global->ioctl_sock, SIOCDEVPRIVATE + 1, &ifr)) < 0) {
+			wpa_printf(MSG_ERROR, "%s: failed to issue private commands\n", __func__);
+			wpa_driver_send_hang_msg(drv);
+		} else {
+			drv_errors = 0;
+			ret = 0;
+			if ((os_strcasecmp(cmd, "LINKSPEED") == 0) ||
+			    (os_strcasecmp(cmd, "RSSI") == 0) ||
+			    (os_strcasecmp(cmd, "GETBAND") == 0) )
+				ret = strlen(buf);
+
+			wpa_printf(MSG_DEBUG, "%s %s len = %d, %d", __func__, buf, ret, strlen(buf));
+		}
+	}
+	return ret;
+}
+#endif /* CONFIG_P2P_AUTO_GO_AS_SOFTAP */
+
+#endif 
+
+
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+static int driver_nl80211_set_key(const char *ifname, void *priv,
+				  enum wpa_alg alg, const u8 *addr,
+				  int key_idx, int set_tx,
+				  const u8 *seq, size_t seq_len,
+				  const u8 *key, size_t key_len)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_set_key(ifname, bss, alg, addr, key_idx,
+					  set_tx, seq, seq_len, key, key_len);
+}
+
+
+static int driver_nl80211_scan2(void *priv,
+				struct wpa_driver_scan_params *params)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_scan(bss, params);
+}
+
+
+static int driver_nl80211_deauthenticate(void *priv, const u8 *addr,
+					 int reason_code)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_deauthenticate(bss, addr, reason_code);
+}
+
+
+static int driver_nl80211_authenticate(void *priv,
+				       struct wpa_driver_auth_params *params)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_authenticate(bss, params);
+}
+
+
+static void driver_nl80211_deinit(void *priv)
+{
+	struct i802_bss *bss = priv;
+	wpa_driver_nl80211_deinit(bss);
+}
+
+
+static int driver_nl80211_if_remove(void *priv, enum wpa_driver_if_type type,
+				    const char *ifname)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_if_remove(bss, type, ifname);
+}
+
+
+static int driver_nl80211_send_mlme(void *priv, const u8 *data,
+				    size_t data_len, int noack)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_send_mlme(bss, data, data_len, noack,
+					    0, 0, 0, 0);
+}
+
+
+static int driver_nl80211_sta_remove(void *priv, const u8 *addr)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_sta_remove(bss, addr);
+}
+
+
+#if defined(HOSTAPD) || defined(CONFIG_AP)
+static int driver_nl80211_set_sta_vlan(void *priv, const u8 *addr,
+				       const char *ifname, int vlan_id)
+{
+	struct i802_bss *bss = priv;
+	return i802_set_sta_vlan(bss, addr, ifname, vlan_id);
+}
+#endif /* HOSTAPD || CONFIG_AP */
+
+
+static int driver_nl80211_read_sta_data(void *priv,
+					struct hostap_sta_driver_data *data,
+					const u8 *addr)
+{
+	struct i802_bss *bss = priv;
+	return i802_read_sta_data(bss, data, addr);
+}
+
+
+static int driver_nl80211_send_action(void *priv, unsigned int freq,
+				      unsigned int wait_time,
+				      const u8 *dst, const u8 *src,
+				      const u8 *bssid,
+				      const u8 *data, size_t data_len,
+				      int no_cck)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_send_action(bss, freq, wait_time, dst, src,
+					      bssid, data, data_len, no_cck);
+}
+
+
+static int driver_nl80211_probe_req_report(void *priv, int report)
+{
+	struct i802_bss *bss = priv;
+	return wpa_driver_nl80211_probe_req_report(bss, report);
+}
+
+
+static int wpa_driver_nl80211_update_ft_ies(void *priv, const u8 *md,
+					    const u8 *ies, size_t ies_len)
+{
+	int ret;
+	struct nl_msg *msg;
+	struct i802_bss *bss = priv;
+	struct wpa_driver_nl80211_data *drv = bss->drv;
+	u16 mdid = WPA_GET_LE16(md);
+
+	msg = nlmsg_alloc();
+	if (!msg)
+		return -ENOMEM;
+
+	wpa_printf(MSG_DEBUG, "nl80211: Updating FT IEs");
+	nl80211_cmd(drv, msg, 0, NL80211_CMD_UPDATE_FT_IES);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, drv->ifindex);
+	NLA_PUT(msg, NL80211_ATTR_IE, ies_len, ies);
+	NLA_PUT_U16(msg, NL80211_ATTR_MDID, mdid);
+
+	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
+	if (ret) {
+		wpa_printf(MSG_DEBUG, "nl80211: update_ft_ies failed "
+			   "err=%d (%s)", ret, strerror(-ret));
+	}
+
+	return ret;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return -ENOBUFS;
+}
+
+
+const u8 * wpa_driver_nl80211_get_macaddr(void *priv)
+{
+	struct i802_bss *bss = priv;
+	struct wpa_driver_nl80211_data *drv = bss->drv;
+
+	if (drv->nlmode != NL80211_IFTYPE_P2P_DEVICE)
+		return NULL;
+
+	return bss->addr;
+}
+
+#endif 
+
+
+#ifdef CONFIG_P2P_AUTO_GO_AS_SOFTAP
+
+#define WPA_PS_ENABLED          0
+#define WPA_PS_DISABLED         1
+
+#define MAX_WPSP2PIE_CMD_SIZE           512
+
+#ifdef ANDROID_P2P
+int wpa_driver_set_p2p_noa(void *priv, u8 count, int start, int duration)
+{
+        char buf[MAX_DRV_CMD_SIZE];
+
+        memset(buf, 0, sizeof(buf));
+        wpa_printf(MSG_DEBUG, "%s: Entry", __func__);
+        snprintf(buf, sizeof(buf), "P2P_SET_NOA %d %d %d", count, start, duration);
+        return wpa_driver_nl80211_driver_cmd(priv, buf, buf, strlen(buf)+1);
+}
+
+
+int wpa_driver_get_p2p_noa(void *priv, u8 *buf, size_t len)
+{
+        /* Return 0 till we handle p2p_presence request completely in the driver */
+        return 0;
+}
+
+int wpa_driver_set_p2p_ps(void *priv, int legacy_ps, int opp_ps, int ctwindow)
+{
+        char buf[MAX_DRV_CMD_SIZE];
+
+        memset(buf, 0, sizeof(buf));
+        wpa_printf(MSG_DEBUG, "%s: Entry", __func__);
+        snprintf(buf, sizeof(buf), "P2P_SET_PS %d %d %d", legacy_ps, opp_ps, ctwindow);
+        return wpa_driver_nl80211_driver_cmd(priv, buf, buf, strlen(buf) + 1);
+}
+
+int wpa_driver_set_ap_wps_p2p_ie(void *priv, const struct wpabuf *beacon,
+                                 const struct wpabuf *proberesp,
+                                 const struct wpabuf *assocresp)
+{
+        char buf[MAX_WPSP2PIE_CMD_SIZE];
+        struct wpabuf *ap_wps_p2p_ie = NULL;
+        char *_cmd = "SET_AP_WPS_P2P_IE";
+        char *pbuf;
+        int ret = 0;
+        int i;
+        struct cmd_desc {
+                int cmd;
+                const struct wpabuf *src;
+        } cmd_arr[] = {
+                {0x1, beacon},
+                {0x2, proberesp},
+                {0x4, assocresp},
+                {-1, NULL}
+        };
+
+        wpa_printf(MSG_DEBUG, "%s: Entry", __func__);
+        for (i = 0; cmd_arr[i].cmd != -1; i++) {
+                os_memset(buf, 0, sizeof(buf));
+                pbuf = buf;
+                pbuf += sprintf(pbuf, "%s %d", _cmd, cmd_arr[i].cmd);
+                *pbuf++ = '\0';
+                ap_wps_p2p_ie = cmd_arr[i].src ?
+                        wpabuf_dup(cmd_arr[i].src) : NULL;
+                if (ap_wps_p2p_ie) {
+                        os_memcpy(pbuf, wpabuf_head(ap_wps_p2p_ie), wpabuf_len(ap_wps_p2p_ie));
+                        ret = wpa_driver_nl80211_driver_cmd(priv, buf, buf,
+                                strlen(_cmd) + 3 + wpabuf_len(ap_wps_p2p_ie));
+                        wpabuf_free(ap_wps_p2p_ie);
+                        if (ret < 0)
+                                break;
+                }
+        }
+
+        return ret;
+}
+#endif /* ANDROID_P2P */
+#endif//CONFIG_P2P_AUTO_GO_AS_SOFTAP
+
+
+
+
 const struct wpa_driver_ops wpa_driver_nl80211_ops = {
 	.name = "nl80211",
 	.desc = "Linux nl80211/cfg80211",
@@ -11216,11 +11625,18 @@ const struct wpa_driver_ops wpa_driver_nl80211_ops = {
 	.update_ft_ies = wpa_driver_nl80211_update_ft_ies,
 	.get_mac_addr = wpa_driver_nl80211_get_macaddr,
 	.get_survey = wpa_driver_nl80211_get_survey,
+
+
+#ifndef CONFIG_P2P_AUTO_GO_AS_SOFTAP
 #ifdef ANDROID_P2P
 	.set_noa = wpa_driver_set_p2p_noa,
 	.get_noa = wpa_driver_get_p2p_noa,
 	.set_ap_wps_ie = wpa_driver_set_ap_wps_p2p_ie,
-#endif
+#endif /* ANDROID_P2P */
+#endif /* CONFIG_P2P_AUTO_GO_AS_SOFTAP */
+
+
+
 #ifdef ANDROID
 	.driver_cmd = wpa_driver_nl80211_driver_cmd,
 #endif
