@@ -44,6 +44,14 @@ L_CFLAGS += -DREALTEK_WIFI_VENDOR
 L_CFLAGS += -DANDROID_P2P
 endif
 
+ 
+ifeq ($(BOARD_WLAN_DEVICE), mtk)
+L_CFLAGS += -DANDROID_MTK_WCN
+L_CFLAGS += -DANDROID_P2P
+endif
+ 
+
+
 ifeq ($(BOARD_WLAN_DEVICE), qcwcn)
 L_CFLAGS += -DANDROID_P2P
 endif
@@ -294,6 +302,14 @@ L_CFLAGS += -DNMI_WIFI
 endif #nmi
 #nmi
 endif
+ 
+
+
+ifeq ($(strip $(BOARD_CONNECTIVITY_VENDOR)), MediaTek_mt7601)
+L_CFLAGS += -DCONFIG_P2P_AUTO_GO_AS_SOFTAP
+endif
+ 
+
 
 ifdef CONFIG_WIFI_DISPLAY
 L_CFLAGS += -DCONFIG_WIFI_DISPLAY

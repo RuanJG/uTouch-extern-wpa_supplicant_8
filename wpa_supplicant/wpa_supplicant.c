@@ -2471,13 +2471,14 @@ int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s)
 	wpa_s->prev_scan_ssid = WILDCARD_SSID_SCAN;
 	wpa_s->prev_scan_wildcard = 0;
 
-	if (wpa_supplicant_enabled_networks(wpa_s)) {
-		if (wpa_supplicant_delayed_sched_scan(wpa_s, interface_count,
-						      100000))
-			wpa_supplicant_req_scan(wpa_s, interface_count,
-						100000);
-		interface_count++;
-	} else
+//gwl
+	//if (wpa_supplicant_enabled_networks(wpa_s)) {
+	//	if (wpa_supplicant_delayed_sched_scan(wpa_s, interface_count,
+	//					      100000))
+	//		wpa_supplicant_req_scan(wpa_s, interface_count,
+	//					100000);
+	//	interface_count++;
+	//} else
 		wpa_supplicant_set_state(wpa_s, WPA_INACTIVE);
 
 	return 0;
@@ -2886,6 +2887,43 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 			os_free(wpa_s->conf->ctrl_interface);
 			wpa_s->conf->ctrl_interface = NULL;
 		}
+
+                if (!wpa_s->conf->wifi_module_name) {
+                    char *buf = (char*)os_malloc(sizeof(char) * 10);
+                    if (buf != NULL) {
+                        memset(buf, 0, 10);
+                        wpa_s->conf->wifi_module_name = buf;
+                        FILE *fp = fopen("/sys/class/rkwifi/chip", "r");
+                        if(NULL == fp) {
+                            wpa_printf(MSG_ERROR, "Can't open /sys/class/rkwifi/chip, errno = %d", errno);
+                            os_free(buf);
+                        } else {
+                            if(0 == fgets(buf, 10, fp)) {
+                                wpa_printf(MSG_ERROR, "read /sys/class/rkwifi/chip failed.");
+                                os_free(buf);
+                            }
+                            fclose(fp);
+                        }
+                    }
+                }
+                wpa_printf(MSG_ERROR, "Get wifi module chip name: <%s>.", wpa_s->conf->wifi_module_name);
+                if (wpa_s->conf->wifi_module_name) {
+                    if (!strcmp("AP6335", wpa_s->conf->wifi_module_name) ||
+                           !strcmp("AP6234", wpa_s->conf->wifi_module_name) ||
+                           !strcmp("AP6441", wpa_s->conf->wifi_module_name)) {
+                        char parambuf[100] = {0};
+                        char *param = wpa_s->conf->driver_param;
+                        if (param && !os_strstr(param, "use_multi_chan_concurrent=1")) {
+                            strcpy(parambuf, param);
+                            strcat(parambuf, "use_multi_chan_concurrent=1");
+                            os_free(wpa_s->conf->driver_param);
+                            wpa_s->conf->driver_param = os_strdup(parambuf);
+                            wpa_printf(MSG_ERROR, "Wifi module <%s> support multiple channels concurrent.",
+                                       wpa_s->conf->wifi_module_name);
+                        }
+                    }
+                }
+
 	} else
 		wpa_s->conf = wpa_config_alloc_empty(iface->ctrl_interface,
 						     iface->driver_param);
@@ -3139,6 +3177,10 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s,
 		wpa_supplicant_ctrl_iface_deinit(wpa_s->ctrl_iface);
 		wpa_s->ctrl_iface = NULL;
 	}
+
+        if (wpa_s->conf->wifi_module_name != NULL) {
+                os_free(wpa_s->conf->wifi_module_name);
+        }
 
 	if (wpa_s->conf != NULL) {
 		wpa_config_free(wpa_s->conf);
