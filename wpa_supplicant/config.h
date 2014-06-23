@@ -481,6 +481,11 @@ struct wpa_config {
 	 */
 	u8 uuid[16];
 
+        /**
+         * the wifi module name which platform use
+         */
+        char *wifi_module_name;
+
 	/**
 	 * device_name - Device Name (WPS)
 	 * User-friendly description of device; up to 32 octets encoded in

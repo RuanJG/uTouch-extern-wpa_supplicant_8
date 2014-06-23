@@ -231,6 +231,8 @@ static int wpa_config_read_global(struct wpa_config *config, HKEY hk)
 	config->ctrl_interface = wpa_config_read_reg_string(
 		hk, TEXT("ctrl_interface"));
 
+	config->wifi_module_name = wpa_config_read_reg_string(
+		hk, TEXT("wifi_module_name"));
 #ifdef CONFIG_WPS
 	if (wpa_config_read_global_uuid(config, hk))
 		errors++;
@@ -574,6 +576,7 @@ static int wpa_config_write_global(struct wpa_config *config, HKEY hk)
 	wpa_config_write_reg_dword(hk, TEXT("update_config"),
 				   config->update_config,
 				   0);
+	wpa_config_write_reg_string(hk, "wifi_module_name", config->wifi_module_name);
 #ifdef CONFIG_WPS
 	if (!is_nil_uuid(config->uuid)) {
 		char buf[40];

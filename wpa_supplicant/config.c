@@ -3100,6 +3100,7 @@ static const struct global_parse_data global_fields[] = {
 	{ STR(pkcs11_module_path), 0 },
 	{ STR(pcsc_reader), 0 },
 	{ STR(pcsc_pin), 0 },
+	{ STR(wifi_module_name), 0 },
 	{ STR(driver_param), 0 },
 	{ INT(dot11RSNAConfigPMKLifetime), 0 },
 	{ INT(dot11RSNAConfigPMKReauthThreshold), 0 },
